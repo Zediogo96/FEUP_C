@@ -20,6 +20,7 @@ statement
 
 expression
     : '(' expression ')' #Parenthesis
+    | expression op=('<' | '&&') expression #BinaryOp
     | expression op=('*' | '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | value=INTEGER #Integer
