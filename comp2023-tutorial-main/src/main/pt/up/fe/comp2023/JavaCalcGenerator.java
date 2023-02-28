@@ -3,11 +3,18 @@ package pt.up.fe.comp2023;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class JavaCalcGenerator extends AJmmVisitor<String, String> {
     private final String className;
+    private Map<String, Integer> variableReads;
+    private Map<String, Integer> variableWrites;
 
     public JavaCalcGenerator(String className) {
         this.className = className;
+        this.variableReads = new HashMap<>();
+        this.variableWrites = new HashMap<>();
     }
 
     protected void buildVisitor() {
@@ -22,28 +29,39 @@ public class JavaCalcGenerator extends AJmmVisitor<String, String> {
 
     private String dealWithProgram(JmmNode jmmNode, String s) {
         s = (s != null ? s : "");
-        String ret = s + "public class " + this.className + " {\n";
+        StringBuilder ret = new StringBuilder(s + "public class " + this.className + " {\n");
         String s2 = s;
-        ret += s2 + "\tpublic static void main(String[] args) {\n";
+        ret.append(s2).append("\tpublic static void main(String[] args) {\n");
 
         for (JmmNode child : jmmNode.getChildren()) {
-            ret += "\t\t" + visit(child, s2);
-            ret += "\n";
+            ret.append("\t\t").append(visit(child, s2));
+            ret.append("\n");
         }
-        ret += s2 + "\t}\n";
-        ret += s + "}\n";
-        return ret;
+        ret.append(s2).append("\t}\n");
+        ret.append(s).append("}\n");
+
+        for (String var : variableWrites.keySet()) {
+            int reads = variableReads.get(var);
+            int writes = variableWrites.getOrDefault(var, 0);
+            System.out.println("\"" + var + "\": " + writes + " writes and " + reads + " reads. \n");
+        }
+
+        return ret.toString();
     }
 
     private String dealWithAssignment(JmmNode jmmNode, String s) {
         String varName = jmmNode.get("var");
         String exprCode = visit(jmmNode.getChildren().get(0), s);
+        variableWrites.put(varName, variableWrites.getOrDefault(varName, 0) + 1);
         return s + "int " + varName + " = " + exprCode + ";";
     }
 
     private String dealWithLiteral(JmmNode jmmNode, String s) {
+        String varName = jmmNode.get("value");
+        variableReads.put(varName, variableReads.getOrDefault(varName, 0) + 1);
         return jmmNode.get("value");
     }
+
 
     private String dealWithExprStmt(JmmNode jmmNode, String s) {
         for (JmmNode child : jmmNode.getChildren()) {
