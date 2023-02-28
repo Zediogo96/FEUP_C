@@ -17,6 +17,7 @@ public class JavaCalcGenerator extends AJmmVisitor<String, String> {
         addVisit("Identifier", this::dealWithLiteral);
         addVisit("ExprStmt", this::dealWithExprStmt);
         addVisit("BinaryOp", this::dealWithBinaryOp);
+        addVisit("Parenthesis", this::dealWithParenthesis);
     }
 
     private String dealWithProgram(JmmNode jmmNode, String s) {
@@ -39,7 +40,7 @@ public class JavaCalcGenerator extends AJmmVisitor<String, String> {
         String exprCode = visit(jmmNode.getChildren().get(0), s);
         return s + "int " + varName + " = " + exprCode + ";";
     }
-    
+
     private String dealWithLiteral(JmmNode jmmNode, String s) {
         return jmmNode.get("value");
     }
@@ -49,6 +50,11 @@ public class JavaCalcGenerator extends AJmmVisitor<String, String> {
             s += visit(child, s);
         }
         return "System.out.println(" + s + ");";
+    }
+
+    private String dealWithParenthesis(JmmNode jmmNode, String s) {
+        String exprCode = visit(jmmNode.getChildren().get(0), s);
+        return "(" + exprCode + ")";
     }
 
     private String dealWithBinaryOp(JmmNode jmmNode, String s) {
